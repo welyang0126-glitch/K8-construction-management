@@ -32,6 +32,7 @@ const mockContacts = [
 
 export default function Directory() {
     const [activeTab, setActiveTab] = useState('All Contacts');
+    const [selectedContact, setSelectedContact] = useState<typeof mockContacts[0] | null>(null);
     const [searchParams] = useSearchParams();
     const searchQuery = searchParams.get('q')?.toLowerCase() || '';
     const tabs = ['All Contacts', 'Developer Team', 'Construction Managers', 'Sub-contractor'];
@@ -53,12 +54,9 @@ export default function Directory() {
                         <p className="text-muted text-sm mt-1">Manage project team, roles, and quick access contact information.</p>
                     </div>
                     <div className="flex gap-4">
-                        <a href="https://docs.google.com/spreadsheets/d/1vFM9ECN5LQoPa9S5a3KohO_BmFdpQx2zG1ZxwH-k0h8/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ borderRadius: 'var(--radius-full)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                        <a href="https://docs.google.com/spreadsheets/d/1vFM9ECN5LQoPa9S5a3KohO_BmFdpQx2zG1ZxwH-k0h8/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ borderRadius: 'var(--radius-full)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                             <ExternalLink size={18} /> View
                         </a>
-                        <button className="btn btn-primary" style={{ borderRadius: 'var(--radius-full)' }}>
-                            <UserPlus size={18} /> Add Contact
-                        </button>
                     </div>
                 </div>
 
@@ -115,18 +113,79 @@ export default function Directory() {
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <button className="btn btn-outline w-full justify-center">
+                                    <button
+                                        className="btn btn-outline btn-hover-primary w-full justify-center"
+                                        onClick={() => setSelectedContact(contact)}
+                                    >
                                         <Phone size={16} /> Call
                                     </button>
-                                    <button className="btn btn-outline w-full justify-center">
+                                    <a
+                                        href={`https://outlook.office.com/mail/deeplink/compose?to=${contact.email}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-outline btn-hover-primary w-full justify-center"
+                                        style={{ textDecoration: 'none' }}
+                                    >
                                         <Mail size={16} /> Email
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </main>
+
+            {selectedContact && (
+                <div
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                    onClick={() => setSelectedContact(null)}
+                >
+                    <div
+                        className="card"
+                        style={{
+                            width: '400px', backgroundColor: 'var(--surface)', padding: '2rem',
+                            position: 'relative'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            style={{ position: 'absolute', top: '1rem', right: '1rem', fontSize: '1.5rem', color: 'var(--text-muted)' }}
+                            onClick={() => setSelectedContact(null)}
+                        >
+                            &times;
+                        </button>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="avatar" style={{ width: 80, height: 80, background: '#e0e7ff', color: 'var(--primary)', fontSize: '2rem' }}>
+                                {selectedContact.avatar}
+                            </div>
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold">{selectedContact.name}</h2>
+                                <p className="text-primary font-medium">{selectedContact.title}</p>
+                                <p className="text-muted">{selectedContact.company}</p>
+                            </div>
+                            <div className="w-full border-t" style={{ borderColor: 'var(--border)', margin: '1rem 0' }}></div>
+                            <div className="w-full flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <Mail className="text-muted" size={20} />
+                                    <span>{selectedContact.email}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Phone className="text-muted" size={20} />
+                                    <span>{selectedContact.phone}</span>
+                                </div>
+                            </div>
+                            <div className="w-full border-t" style={{ borderColor: 'var(--border)', margin: '1rem 0' }}></div>
+                            <button className="btn btn-primary w-full" onClick={() => setSelectedContact(null)}>
+                                닫기(Close)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

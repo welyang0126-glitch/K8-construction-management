@@ -67,6 +67,51 @@ export default function Dashboard() {
     const pctRemaining = activeTotal > 0 ? (activeRemaining / activeTotal) * 100 : 0;
     const pctFinished = activeTotal > 0 ? (activeFinished / activeTotal) * 100 : 0;
 
+    const chartData = (() => {
+        if (filteredDefects.length === 0) return mockChartData;
+
+        const dateMap: Record<string, { dateObj: Date, defects: number, resolved: number }> = {};
+
+        filteredDefects.forEach(d => {
+            const timeBefore = d['Time(before)'];
+            if (!timeBefore) return;
+
+            // Typical format: "2026. 3. 5 오전 10:52:21"
+            const dateMatch = timeBefore.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
+            if (dateMatch) {
+                const year = parseInt(dateMatch[1], 10);
+                const month = parseInt(dateMatch[2], 10) - 1;
+                const day = parseInt(dateMatch[3], 10);
+
+                const dateObj = new Date(year, month, day);
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const name = `${monthNames[month]} ${day.toString().padStart(2, '0')}`;
+
+                if (!dateMap[name]) {
+                    dateMap[name] = { dateObj, defects: 0, resolved: 0 };
+                }
+
+                dateMap[name].defects++;
+
+                const s = d.Status?.trim()?.toLowerCase() || '';
+                if (s.includes('resolv') || s.includes('완료') || s.includes('close') || s.includes('done')) {
+                    dateMap[name].resolved++;
+                }
+            }
+        });
+
+        const dataPoints = Object.keys(dateMap).map(name => ({
+            name,
+            defects: dateMap[name].defects,
+            resolved: dateMap[name].resolved,
+            dateObj: dateMap[name].dateObj
+        }));
+
+        if (dataPoints.length === 0) return mockChartData;
+
+        return dataPoints.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    })();
+
     return (
         <div className="h-full flex-col flex" style={{ background: 'var(--bg-color)', minHeight: '100vh', paddingBottom: '3rem' }}>
             <DashboardNavbar />
@@ -158,13 +203,12 @@ export default function Dashboard() {
                             <h2 className="font-bold text-lg">Defect Occurrence Trends</h2>
                             <div className="flex gap-2">
                                 <span className="badge" style={{ background: '#e0e7ff', color: 'var(--primary)', cursor: 'pointer' }}>Daily</span>
-                                <span className="badge" style={{ backgroundColor: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Weekly</span>
                             </div>
                         </div>
 
                         <div style={{ width: '100%', height: 250, marginBottom: '2rem' }}>
                             <ResponsiveContainer>
-                                <AreaChart data={mockChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorDefects" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8} />
